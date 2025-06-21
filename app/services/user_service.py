@@ -5,6 +5,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from aiogram.types import User as TelegramUser
 from tortoise.queryset import Q
+from tortoise.exceptions import DoesNotExist
 
 from app.models import User, DownloadHistory
 from app.config.settings import settings
@@ -42,7 +43,7 @@ class UserService:
                 
             await user.update_activity()
             
-        except User.DoesNotExist:
+        except DoesNotExist:
             # Создаем нового пользователя
             is_admin = telegram_user.id in settings.admin_ids
             
@@ -66,7 +67,7 @@ class UserService:
         try:
             user = await User.get(telegram_id=telegram_id)
             return user.is_blocked
-        except User.DoesNotExist:
+        except DoesNotExist:
             return False
     
     @staticmethod
@@ -78,7 +79,7 @@ class UserService:
             await user.save()
             logger.info(f"Пользователь {telegram_id} заблокирован")
             return True
-        except User.DoesNotExist:
+        except DoesNotExist:
             return False
     
     @staticmethod
@@ -90,7 +91,7 @@ class UserService:
             await user.save()
             logger.info(f"Пользователь {telegram_id} разблокирован")
             return True
-        except User.DoesNotExist:
+        except DoesNotExist:
             return False
     
     @staticmethod
@@ -130,7 +131,7 @@ class UserService:
                 "last_activity": user.last_activity
             }
             
-        except User.DoesNotExist:
+        except DoesNotExist:
             return None
     
     @staticmethod
@@ -165,7 +166,7 @@ class UserService:
             await user.save()
             logger.info(f"Пользователь {telegram_id} повышен до администратора")
             return True
-        except User.DoesNotExist:
+        except DoesNotExist:
             return False
     
     @staticmethod
@@ -177,7 +178,7 @@ class UserService:
             await user.save()
             logger.info(f"У пользователя {telegram_id} сняты права администратора")
             return True
-        except User.DoesNotExist:
+        except DoesNotExist:
             return False
     
     @staticmethod
