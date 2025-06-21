@@ -60,7 +60,7 @@ class YouTubeService:
                 'quiet': True,
                 'no_warnings': True,
                 'extractaudio': False,
-                'format': 'best[height<=720]',
+                'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -151,7 +151,7 @@ class YouTubeService:
         self,
         video: Video,
         user: User,
-        quality: str = "best[height<=720]",
+        quality: str = "720p",
         format_type: str = "mp4"
     ) -> Optional[DownloadHistory]:
         """Скачивает видео"""
@@ -177,8 +177,28 @@ class YouTubeService:
                 f"%(title)s.%(ext)s"
             )
             
+            # Определяем формат для скачивания
+            if format_type == 'mp3':
+                # Для аудио формата
+                format_selector = 'bestaudio/best'
+            else:
+                # Для видео формата с fallback стратегией
+                if quality == "480p":
+                    format_selector = 'bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+                elif quality == "720p":
+                    format_selector = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+                elif quality == "1080p":
+                    format_selector = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+                elif quality == "360p":
+                    format_selector = 'bestvideo[height<=360]+bestaudio/best[height<=360]/best'
+                elif quality == "240p":
+                    format_selector = 'bestvideo[height<=240]+bestaudio/best[height<=240]/best'
+                else:
+                    # По умолчанию
+                    format_selector = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+            
             ydl_opts = {
-                'format': quality,
+                'format': format_selector,
                 'outtmpl': output_template,
                 'quiet': True,
                 'no_warnings': True,

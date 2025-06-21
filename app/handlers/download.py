@@ -138,26 +138,11 @@ async def download_callback(callback: CallbackQuery, user: User):
             parse_mode="HTML"
         )
         
-        # Настраиваем параметры скачивания
-        if format_type == "mp3":
-            download_quality = "bestaudio/best"
-        else:
-            if quality == "720p":
-                download_quality = "best[height<=720]"
-            elif quality == "480p":
-                download_quality = "best[height<=480]"
-            elif quality == "360p":
-                download_quality = "best[height<=360]"
-            elif quality == "240p":
-                download_quality = "best[height<=240]"
-            else:
-                download_quality = "best[height<=720]"
-        
         # Скачиваем видео
         download_record = await youtube_service.download_video(
             video=video,
             user=user,
-            quality=download_quality,
+            quality=quality,
             format_type=format_type
         )
         
