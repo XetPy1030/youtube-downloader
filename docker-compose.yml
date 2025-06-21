@@ -1,0 +1,86 @@
+services:
+  bot:
+    build: .
+    container_name: youtube-downloader-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_IDS=${ADMIN_IDS}
+      - DATABASE_URL=postgres://youtube_user:${POSTGRES_PASSWORD}@db:5432/youtube_bot
+      - REDIS_URL=redis://redis:6379/0
+      - DOWNLOAD_PATH=/app/downloads
+      - MAX_VIDEO_DURATION=${MAX_VIDEO_DURATION:-3600}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-52428800}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=/app/logs/bot.log
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-5}
+    volumes:
+      - downloads_data:/app/downloads
+      - logs_data:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - youtube-bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "from app.config.settings import settings; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:15-alpine
+    container_name: youtube-downloader-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=youtube_bot
+      - POSTGRES_USER=youtube_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    networks:
+      - youtube-bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youtube_user -d youtube_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: youtube-downloader-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - youtube-bot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  downloads_data:
+    driver: local
+  logs_data:
+    driver: local
+
+networks:
+  youtube-bot-network:
+    driver: bridge
