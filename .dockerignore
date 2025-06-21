@@ -63,10 +63,6 @@ downloads/
 *.db
 *.sqlite3
 
-# Aerich migrations (будут созданы внутри контейнера)
-migrations/
-aerich.ini
-
 # Cache
 .cache/
 .pytest_cache/
