@@ -29,7 +29,12 @@ class RateLimitMiddleware(BaseMiddleware):
         
         # Получаем пользователя из события
         user_id = None
-        if isinstance(event, Update):
+        
+        # Если это напрямую Message/CallbackQuery и т.д.
+        if hasattr(event, 'from_user'):
+            user_id = event.from_user.id
+        # Если это Update объект
+        elif isinstance(event, Update):
             if event.message:
                 user_id = event.message.from_user.id
             elif event.callback_query:
@@ -55,7 +60,11 @@ class RateLimitMiddleware(BaseMiddleware):
             else:
                 logger.warning(f"Пользователь {user_id} превысил лимит запросов")
                 # Можно отправить сообщение о превышении лимита
-                if isinstance(event, Update) and event.message:
+                if hasattr(event, 'answer'):
+                    await event.answer(
+                        "⚠️ Вы превысили лимит запросов. Попробуйте позже."
+                    )
+                elif isinstance(event, Update) and event.message:
                     await event.message.answer(
                         "⚠️ Вы превысили лимит запросов. Попробуйте позже."
                     )
