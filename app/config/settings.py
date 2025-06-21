@@ -1,8 +1,8 @@
 """
 Настройки приложения
 """
-from typing import List, Optional
-from pydantic import Field
+from typing import List, Optional, Union
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -49,11 +49,28 @@ class Settings(BaseSettings):
         description="Количество запросов в минуту на пользователя"
     )
     
+    @field_validator('admin_ids', mode='before')
+    @classmethod
+    def parse_admin_ids(cls, value: Union[str, int, List[int]]) -> List[int]:
+        """Парсинг ID администраторов из строки или числа в список"""
+        if isinstance(value, str):
+            # Если строка, разделяем по запятым и преобразуем в числа
+            return [int(x.strip()) for x in value.split(',') if x.strip().isdigit()]
+        elif isinstance(value, int):
+            # Если одно число, делаем из него список
+            return [value]
+        elif isinstance(value, list):
+            # Если уже список, возвращаем как есть
+            return value
+        else:
+            return []
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Игнорировать неизвестные переменные из .env
 
 
 # Глобальный экземпляр настроек
-settings = Settings() 
+settings = Settings()
