@@ -10,6 +10,7 @@ from app.models import User
 from app.services.user_service import UserService
 from app.services.youtube_service import YouTubeService
 from app.services.logger import get_logger
+from app.middlewares import AdminMiddleware
 
 logger = get_logger(__name__)
 router = Router()
@@ -18,22 +19,11 @@ router = Router()
 user_service = UserService()
 youtube_service = YouTubeService()
 
-
-def admin_required(func):
-    """Декоратор для проверки прав администратора"""
-    async def wrapper(message_or_callback, user: User, *args, **kwargs):
-        if not user.is_admin:
-            if hasattr(message_or_callback, 'answer'):
-                await message_or_callback.answer("❌ У вас нет прав администратора")
-            else:
-                await message_or_callback.answer("❌ У вас нет прав администратора", show_alert=True)
-            return
-        return await func(message_or_callback, user, *args, **kwargs)
-    return wrapper
+router.message.middleware(AdminMiddleware())
+router.callback_query.middleware(AdminMiddleware())
 
 
 @router.message(Command("admin"))
-@admin_required
 async def admin_panel(message: Message, user: User):
     """Главная панель администратора"""
     
@@ -74,7 +64,6 @@ async def admin_panel(message: Message, user: User):
 
 
 @router.callback_query(F.data == "admin_users")
-@admin_required
 async def admin_users_callback(callback: CallbackQuery, user: User):
     """Управление пользователями"""
     
@@ -104,7 +93,6 @@ async def admin_users_callback(callback: CallbackQuery, user: User):
 
 
 @router.callback_query(F.data == "admin_stats")
-@admin_required
 async def admin_stats_callback(callback: CallbackQuery, user: User):
     """Подробная статистика"""
     
@@ -140,7 +128,6 @@ async def admin_stats_callback(callback: CallbackQuery, user: User):
 
 
 @router.callback_query(F.data == "admin_cleanup")
-@admin_required
 async def admin_cleanup_callback(callback: CallbackQuery, user: User):
     """Очистка файлов"""
     
@@ -173,7 +160,6 @@ async def admin_cleanup_callback(callback: CallbackQuery, user: User):
 
 
 @router.callback_query(F.data == "admin_broadcast")
-@admin_required
 async def admin_broadcast_callback(callback: CallbackQuery, user: User):
     """Рассылка сообщений"""
     
@@ -199,7 +185,6 @@ async def admin_broadcast_callback(callback: CallbackQuery, user: User):
 
 
 @router.message(Command("broadcast"))
-@admin_required
 async def broadcast_command(message: Message, user: User):
     """Команда рассылки"""
     
@@ -242,7 +227,6 @@ async def broadcast_command(message: Message, user: User):
 
 
 @router.callback_query(F.data == "admin_back")
-@admin_required
 async def admin_back_callback(callback: CallbackQuery, user: User):
     """Возврат к главной панели администратора"""
     
@@ -284,7 +268,6 @@ async def admin_back_callback(callback: CallbackQuery, user: User):
 
 # Команды для управления пользователями
 @router.message(Command("ban"))
-@admin_required
 async def ban_user_command(message: Message, user: User):
     """Команда блокировки пользователя"""
     
@@ -308,7 +291,6 @@ async def ban_user_command(message: Message, user: User):
 
 
 @router.message(Command("unban"))
-@admin_required  
 async def unban_user_command(message: Message, user: User):
     """Команда разблокировки пользователя"""
     
